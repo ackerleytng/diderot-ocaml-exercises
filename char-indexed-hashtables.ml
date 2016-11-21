@@ -3,7 +3,7 @@ module type GenericTrie = sig
   type 'a trie = Trie of 'a option * 'a trie char_table
   val empty : unit -> 'a trie
   val insert : 'a trie -> string -> 'a -> 'a trie
-  (*  val lookup : 'a trie -> string -> 'a option *)
+  val lookup : 'a trie -> string -> 'a option
 end
                         
 module CharHashedType =
@@ -24,23 +24,39 @@ struct
   let empty () = Trie (None, CharHashtbl.create 5)
                
   let add_value trie v = 
-    let _, table = trie in
-    Trie (v, table)
+    let Trie (_, table) = trie in
+    Trie (Some v, table)
                
-  let rec insert trie w v =
+  let rec insert (trie : 'a trie) w v =
     let len = String.length w in
-    if len <= 0 then trie
-    else if len = 1 then 
+    if len <= 0 then add_value trie v
     else 
       let c = String.get w 0 and
-          _, hash_table = trie in
+          Trie (this_v, hash_table) = trie in
       try
-        let old_trie = CharHashtbl.find hash_table c in
+        let next_trie = CharHashtbl.find hash_table c and
+            new_hash_table = CharHashtbl.copy hash_table in
+        CharHashtbl.replace new_hash_table c (insert next_trie (String.sub w 1 (len -1)) v);
+        Trie (this_v, new_hash_table)
       with
-        Not_found -> CharHashtbl.add 
-                       (CharHashtbl.copy hash_table) 
-                       c 
-                       (insert (empty ()) (String.sub 1 (len -1)) v)
-          
+        Not_found -> let new_hash_table = CharHashtbl.copy hash_table in
+                     CharHashtbl.add new_hash_table c (insert (empty ()) (String.sub w 1 (len -1)) v);
+                     Trie (this_v, new_hash_table)
+                          
+  let lookup trie w =
+    let len = String.length w and
+        Trie (this_v, this_table) = trie in
+    if len <= 0 then this_v
+    else 
+      let c = String.get w 0 in
+      try
+        let next_trie = CharHashtbl.find hash_table c and
+            new_hash_table = CharHashtbl.copy hash_table in
+        CharHashtbl.replace new_hash_table c (insert next_trie (String.sub w 1 (len -1)) v);
+        Trie (this_v, new_hash_table)
+      with
+        Not_found -> let new_hash_table = CharHashtbl.copy hash_table in
+                     CharHashtbl.add new_hash_table c (insert (empty ()) (String.sub w 1 (len -1)) v);
+                     Trie (this_v, new_hash_table)
 end
                                      
