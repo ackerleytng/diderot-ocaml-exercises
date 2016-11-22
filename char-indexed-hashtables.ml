@@ -43,20 +43,16 @@ struct
                      CharHashtbl.add new_hash_table c (insert (empty ()) (String.sub w 1 (len -1)) v);
                      Trie (this_v, new_hash_table)
                           
-  let lookup trie w =
+  let rec lookup trie w =
     let len = String.length w and
         Trie (this_v, this_table) = trie in
     if len <= 0 then this_v
     else 
       let c = String.get w 0 in
       try
-        let next_trie = CharHashtbl.find hash_table c and
-            new_hash_table = CharHashtbl.copy hash_table in
-        CharHashtbl.replace new_hash_table c (insert next_trie (String.sub w 1 (len -1)) v);
-        Trie (this_v, new_hash_table)
+        let next_trie = CharHashtbl.find this_table c in
+        lookup next_trie (String.sub w 1 (len -1))
       with
-        Not_found -> let new_hash_table = CharHashtbl.copy hash_table in
-                     CharHashtbl.add new_hash_table c (insert (empty ()) (String.sub w 1 (len -1)) v);
-                     Trie (this_v, new_hash_table)
+        Not_found -> None
 end
                                      
