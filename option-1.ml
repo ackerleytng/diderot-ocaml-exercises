@@ -88,7 +88,7 @@ let archive_map (opset : ('a, 'set) set_operations) (r : 'a rel) (s, l) =
  * If the solution is among those states, the problem is solved.
  * Otherwise, the generator is applied and checking is done again.
  *)
-let solve' (opset : ('a, 'set) set_operations) (r : 'a rel) p x =
+let solve' opset r p x =
   let rec aux (s, l) =
     try
       find p l
@@ -98,7 +98,7 @@ let solve' (opset : ('a, 'set) set_operations) (r : 'a rel) p x =
   aux (opset.empty, [x])
 
 (* 
- * solve_path' takes a set of functions for manipulating a list of elements,
+ * solve_path' takes a set of functions for manipulating a set of a list of elements,
  *   a generator function, a checker function, and an initial state
  *
  * I suspect the element list in the set are paths that have been checked before,
