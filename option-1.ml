@@ -3,8 +3,8 @@ exception NotFound
 let rec loop p f x =
   if p x then x
   else loop p f (f x)
-  
-let exists p l = 
+
+let exists p l =
   List.exists p l
 
 let find p l =
@@ -14,23 +14,23 @@ let find p l =
     Not_found -> raise NotFound
 
 (* Part A: A Generic Problem Solver *)
-               
+
 type 'e rel = 'e -> 'e list
 
-let near (x : int) : int list = 
+let near (x : int) : int list =
   Array.init 5 (fun i -> x - 2 + i) |> Array.to_list
 
 let rec flat_map (f : 'e rel) : 'e list -> 'e list = function
     [] -> []
   | x :: xs -> (f x) @ flat_map f xs
-  
+
 let rec iter_rel (rel : 'e rel) (times : int) : 'e rel =
   if times < 1 then (fun x -> [x])
   else fun x -> flat_map rel (iter_rel rel (times - 1) x)
 
 type 'e prop = 'e -> bool
-             
-(* 
+
+(*
  * solve takes a generator function, a checker function, and an initial state
  *
  * In each step, the checker function is applied on the possible states.
@@ -55,7 +55,7 @@ let solve (r : 'a rel) (p : 'a prop) (x : 'a) =
  *   This will get us the final solution
  * In the next step, the question is:
  *   What is the answer if you apply the generator once?
- * Then, 
+ * Then,
  *   _____________________________________________ twice?
  * And so on.
  * In this way, the path is built up.
@@ -79,11 +79,11 @@ let archive_map (opset : ('a, 'set) set_operations) (r : 'a rel) (s, l) =
   let s' = List.fold_left (fun s e -> opset.add e s) s l' in
   (s', l')
 
-(* 
- * solve' takes a set of functions for manipulating a set of elements, 
+(*
+ * solve' takes a set of functions for manipulating a set of elements,
  *   a generator function, a checker function, and an initial state
  *
- * In each step, the checker function is applied on the 
+ * In each step, the checker function is applied on the
  *   POSSIBLE new states that have NEVER BEEN CHECKED.
  * If the solution is among those states, the problem is solved.
  * Otherwise, the generator is applied and checking is done again.
@@ -97,19 +97,25 @@ let solve' opset r p x =
   in
   aux (opset.empty, [x])
 
-(* 
+(*
  * solve_path' takes a set of functions for manipulating a set of a list of elements,
  *   a generator function, a checker function, and an initial state
  *
- * I suspect the element list in the set are paths that have been checked before,
- *   so the set is actually used to constrain the paths chosen
- *
- * In each step, the checker function is applied on the 
- *   POSSIBLE new states that have NEVER BEEN CHECKED.
- * If the solution is among those states, the problem is solved.
- * Otherwise, the generator is applied and checking is done again.
+ * I think solve_path was inefficient since the same path is explored multiple times
+ *   in the process of building the path
+ * This version of solve_path' improves on that using something that is more like a forward bfs
+ * Nodes are marked as done by adding the output mappings to a set
  *)
 let solve_path' (opset : ('a list, 'set) set_operations) (r : 'a rel) p x =
+  let rec iterate done_set = function
+      [] -> NotFound
+    | e :: es ->
+       let mapping = r e in
+       if opset.mem mapping done_set then iterate done_set es
+       else iterate (opset.add mapping done_set) (es @ mapping)
+
+    let mapping = r element in
+
   let rec aux accum level =
     let solution = solve' opset r (fun k -> exists p (iter_rel r level k)) x in
     if solution = x then solution :: accum
